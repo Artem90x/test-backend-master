@@ -5,7 +5,6 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.util.SortedMap
 
 object BudgetService {
     suspend fun addRecord(body: BudgetRecord): BudgetRecord = withContext(Dispatchers.IO) {
@@ -15,6 +14,7 @@ object BudgetService {
                 this.month = body.month
                 this.amount = body.amount
                 this.type = body.type
+                this.authorId = body.author_id
             }
 
             return@transaction entity.toResponse()
