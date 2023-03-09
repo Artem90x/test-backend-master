@@ -22,7 +22,7 @@ class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
     var type by BudgetTable.type
     var authorId by BudgetTable.author_id
 
-    fun toResponse(): BudgetRecord {
-        return BudgetRecord(year, month, amount, type, authorId)
+    fun toResponse(): BudgetRecordResponse {
+        return BudgetRecordResponse(id.value, year, month, amount, type, authorId)
     }
 }

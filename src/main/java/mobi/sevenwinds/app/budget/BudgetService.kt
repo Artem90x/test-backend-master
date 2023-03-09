@@ -2,12 +2,14 @@ package mobi.sevenwinds.app.budget
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.stream.Collectors
 
 object BudgetService {
-    suspend fun addRecord(body: BudgetRecord): BudgetRecord = withContext(Dispatchers.IO) {
+    suspend fun addRecord(body: BudgetRecord): BudgetRecordResponse = withContext(Dispatchers.IO) {
         transaction {
             val entity = BudgetEntity.new {
                 this.year = body.year
@@ -29,14 +31,28 @@ object BudgetService {
                 .limit(param.limit, param.offset)
 
             val total = query.count()
-            val data = BudgetEntity.wrapRows(query).map { it.toResponse() }
+            var data = BudgetEntity.wrapRows(query).map { it.toResponse() }
+            if (param.authorName != null) {
+                data = data.filter {
+                    it.author_id != null && AuthorTable.select { AuthorTable.id eq it.author_id }
+                        .first()[AuthorTable.name].toLowerCase().contains(
+                        param.authorName.toString().toLowerCase()
+                    )
+                }
+            }
 
             val sumByType = data.groupBy { it.type.name }.mapValues { it.value.sumOf { v -> v.amount } }
+            val budgetRecordMapToAuthorsName =
+                data.stream().filter { it.author_id != null }.collect(Collectors.toList()).associate {
+                    it.id.toString() to AuthorTable.select { AuthorTable.id eq it.author_id }
+                        .first()[AuthorTable.name]
+                }
 
             return@transaction BudgetYearStatsResponse(
                 total = total,
                 totalByType = sumByType,
-                items = data
+                items = data,
+                budgetRecordIdAuthorsNameMap = budgetRecordMapToAuthorsName
             )
         }
     }
