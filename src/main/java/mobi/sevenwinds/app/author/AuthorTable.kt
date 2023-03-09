@@ -8,12 +8,14 @@ import org.jetbrains.exposed.dao.IntIdTable
 
 object AuthorTable : IntIdTable("author") {
     val name = text("name")
+    val date = datetime("date")
 }
 
 class AuthorEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<AuthorEntity>(AuthorTable)
 
     var name by AuthorTable.name
+    var date by AuthorTable.date
 
     fun toResponse(): AuthorRecord {
         return AuthorRecord(name)
